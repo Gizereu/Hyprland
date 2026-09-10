@@ -1,0 +1,326 @@
+require("extra.hyprland-colors")
+
+--------------
+--- CONFIG ---
+--------------
+ipc = "qs -c ~/.config/nerii_shell"
+terminal = "kitty"
+fileManager = "dolphin"
+menu = ipc .. " launcher toggle"
+browser = "zen"
+
+------------------
+---- MONITORS ----
+------------------
+
+hl.monitor({
+    output   = "eDP-1",
+    mode     = "1920x1080@144.00Hz",
+    position = "0x0",
+    scale    = 1,
+})
+
+-----------------
+--- AUTOSTART ---
+-----------------
+
+hl.on("hyprland.start", function()
+    hl.exec_cmd("systemctl --user start hyprland-session.target")
+    hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP")
+    hl.exec_cmd("qs -c ~/.config/nerii-shell")
+    hl.exec_cmd("systemctl --user start hyprpolkitagent")
+    hl.exec_cmd("/usr/lib/jellyfin-rpc/jellyfin-rpc")
+    hl.exec_cmd("fcitx5")
+    hl.exec_cmd("wl-paste --type text --watch cliphist store")
+    hl.exec_cmd("wl-paste --type image --watch cliphist store")
+    hl.exec_cmd("protonmail-bridge-core --cli")
+    hl.exec_cmd("thunderbird")
+    hl.exec_cmd("obsidian")
+    hl.exec_cmd("qbittorrent")
+    hl.exec_cmd("streamcontroller -b")
+    hl.exec_cmd("anki")
+end)
+
+----------------------------
+---- STOP WITH HYPRLAND ----
+----------------------------
+hl.on("hyprland.shutdown", function()
+    os.execute("systemctl --user stop hyprland-session.target && sleep 0.1")
+    -- uses a blocking exec function and sleeps a bit to give things time to close
+    -- you might also want to kill troublesome/crashing non-systemd background services here:
+    -- os.execute("pkill wallpaperthing; systemctl --user stop hyprland-session.target && sleep 0.1")
+end)
+
+-------------------------------
+---- ENVIRONMENT VARIABLES ----
+-------------------------------
+
+hl.env("XCURSOR_SIZE", "24")
+hl.env("HYPRCURSOR_SIZE", "24")
+
+hl.env("QT_QPA_PLATFORMTHEME", "kde")
+hl.env("QS_ICON_THEME", "breeze")
+
+-----------------------
+----- PERMISSIONS -----
+-----------------------
+
+hl.permission({binary = "/usr/(lib|libexec|lib64)/xdg-desktop-portal-hyprland", type =  "screencopy", mode = "allow"})
+
+-----------------------
+---- LOOK AND FEEL ----
+-----------------------
+
+hl.config({
+    general = {
+        gaps_in  = 5,
+        gaps_out = 10,
+
+        border_size = 2,
+
+        col = {
+            active_border   = color_primary,
+            inactive_border = color_on_primary,
+        },
+
+        -- Set to true to enable resizing windows by clicking and dragging on borders and gaps
+        resize_on_border = false,
+
+        -- Please see https://wiki.hypr.land/Configuring/Advanced-and-Cool/Tearing/ before you turn this on
+        allow_tearing = false,
+
+        layout = "dwindle",
+    },
+
+    decoration = {
+        rounding       = 0,
+        rounding_power = 2,
+
+        -- Change transparency of focused and unfocused windows
+        active_opacity   = 1.0,
+        inactive_opacity = 1.0,
+
+        shadow = {
+            enabled      = true,
+            range        = 4,
+            render_power = 3,
+            color        = 0xee1a1a1a,
+        },
+
+        blur = {
+            enabled   = true,
+            size      = 3,
+            passes    = 2,
+            vibrancy  = 0.1696,
+        },
+    },
+
+    animations = {
+        enabled = true,
+    },
+})
+
+hl.layer_rule({ match = { namespace = "nerii-shell.+" }, blur = true, ignore_alpha = false})
+hl.layer_rule({ match = { namespace = "nerii-shell-launcher-overlay.+" }, blur = true, ignore_alpha = false, dim_around=true})
+
+-- Window opacity
+hl.window_rule({ match = { class = "code-oss" }, opacity = "0.85" })
+hl.window_rule({ match = { class = "md.Obsidian" }, opacity = "0.9" })
+hl.window_rule({ match = { class = "org.gnome.Nautilus" }, opacity = "0.85" })
+hl.window_rule({ match = { class = "jetbrains-idea-ce" }, opacity = "0.9" })
+hl.window_rule({ match = { class = "vesktop" }, opacity = "0.85" })
+hl.window_rule({ match = { class = "kitty" }, opacity = "0.85" })
+hl.window_rule({ match = { class = "spotify" }, opacity = "0.6" })
+
+-- Default curves and animations, see https://wiki.hypr.land/Configuring/Advanced-and-Cool/Animations/
+hl.curve("easeOutQuint",   { type = "bezier", points = { {0.23, 1},    {0.32, 1}    } })
+hl.curve("easeInOutCubic", { type = "bezier", points = { {0.65, 0.05}, {0.36, 1}    } })
+hl.curve("linear",         { type = "bezier", points = { {0, 0},       {1, 1}       } })
+hl.curve("almostLinear",   { type = "bezier", points = { {0.5, 0.5},   {0.75, 1}    } })
+hl.curve("quick",          { type = "bezier", points = { {0.15, 0},    {0.1, 1}     } })
+
+
+hl.animation({ leaf = "global",        enabled = true,  speed = 1,   bezier = "linear" })
+hl.animation({ leaf = "border",        enabled = true,  speed = 2.39, bezier = "easeOutQuint" })
+hl.animation({ leaf = "windows",       enabled = true,  speed = 2.79, bezier = "easeOutQuint" })
+hl.animation({ leaf = "windowsIn",     enabled = true,  speed = 2.1,  bezier = "easeOutQuint",         style = "popin 87%" })
+hl.animation({ leaf = "windowsOut",    enabled = true,  speed = 1.49, bezier = "linear",       style = "popin 87%" })
+hl.animation({ leaf = "fadeIn",        enabled = true,  speed = 1.73, bezier = "almostLinear" })
+hl.animation({ leaf = "fadeOut",       enabled = true,  speed = 1.46, bezier = "almostLinear" })
+hl.animation({ leaf = "fade",          enabled = true,  speed = 3.03, bezier = "quick" })
+hl.animation({ leaf = "layers",        enabled = true,  speed = 2.81, bezier = "easeOutQuint" })
+hl.animation({ leaf = "layersIn",      enabled = true,  speed = 2,    bezier = "easeOutQuint", style = "fade" })
+hl.animation({ leaf = "layersOut",     enabled = true,  speed = 1.5,  bezier = "linear",       style = "fade" })
+hl.animation({ leaf = "fadeLayersIn",  enabled = true,  speed = 1.79, bezier = "almostLinear" })
+hl.animation({ leaf = "fadeLayersOut", enabled = true,  speed = 1.39, bezier = "almostLinear" })
+hl.animation({ leaf = "workspaces",    enabled = true,  speed = 1.94, bezier = "almostLinear", style = "fade" })
+hl.animation({ leaf = "workspacesIn",  enabled = true,  speed = 1.21, bezier = "almostLinear", style = "fade" })
+hl.animation({ leaf = "workspacesOut", enabled = true,  speed = 1.94, bezier = "almostLinear", style = "fade" })
+hl.animation({ leaf = "zoomFactor",    enabled = true,  speed = 7,    bezier = "quick" })
+
+hl.config({
+    dwindle = {
+        preserve_split = true,
+    },
+})
+
+hl.config({
+    master = {
+        new_status = "master",
+    },
+})
+
+hl.config({
+    scrolling = {
+        column_width = 1,
+    },
+})
+
+----------------
+----  MISC  ----
+----------------
+
+hl.config({
+    misc = {
+        force_default_wallpaper = 2,    -- Set to 0 or 1 to disable the anime mascot wallpapers
+        disable_hyprland_logo   = false, -- If true disables the random hyprland logo / anime girl background. :(
+    },
+})
+
+---------------
+---- INPUT ----
+---------------
+
+hl.config({
+    input = {
+        kb_layout  = "us,ru",
+        kb_variant = "",
+        kb_model   = "",
+        kb_options = "grp:alt_shift_toggle",
+        kb_rules   = "",
+
+        follow_mouse = 1,
+
+        sensitivity = 0, -- -1.0 - 1.0, 0 means no modification.
+
+        touchpad = {
+            natural_scroll = true,
+        },
+    },
+})
+
+hl.gesture({
+    fingers = 3,
+    direction = "horizontal",
+    action = "workspace"
+})
+
+
+--------------------------------
+---- WINDOWS AND WORKSPACES ----
+--------------------------------
+
+hl.workspace_rule({ workspace = "1", monitor = "eDP-1", })
+hl.workspace_rule({ workspace = "2", monitor = "eDP-1" })
+hl.workspace_rule({ workspace = "3", monitor = "eDP-1", on_created_empty = "spotify"})
+hl.workspace_rule({ workspace = "4", monitor = "eDP-1", on_created_empty = "vesktop" })
+hl.workspace_rule({ workspace = "9", layout = "scrolling"})
+hl.workspace_rule({ workspace = "10", layout = "scrolling"})
+
+hl.window_rule({ match = {class = "Spotify"}, workspace = "3" })
+hl.window_rule({ match = {class = "org.mozilla.Thunderbird"}, workspace = "10" })
+hl.window_rule({ match = {class = "obsidian"}, workspace = "10" })
+
+local suppressMaximizeRule = hl.window_rule({
+    -- Ignore maximize requests from all apps. You'll probably like this.
+    name  = "suppress-maximize-events",
+    match = { class = ".*" },
+
+    suppress_event = "maximize",
+})
+
+hl.window_rule({
+    -- Fix some dragging issues with XWayland
+    name  = "fix-xwayland-drags",
+    match = {
+        class      = "^$",
+        title      = "^$",
+        xwayland   = true,
+        float      = true,
+        fullscreen = false,
+        pin        = false,
+    },
+
+    no_focus = true,
+})
+
+-------------------
+--- KEYBINDINGS ---
+-------------------
+
+local mainMod = "SUPER"
+-------------------
+--- BASIC BINDS ---
+-------------------
+
+hl.bind(mainMod .. " + L", hl.dsp.exec_cmd("killall qs"))
+
+hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd(terminal))
+hl.bind(mainMod .. " + C", hl.dsp.window.close())
+hl.bind(mainMod .. " + M", hl.dsp.exec_cmd("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'"))
+hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
+hl.bind(mainMod .. " + B", hl.dsp.exec_cmd(browser))
+hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
+hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"))
+hl.bind(mainMod .. " + D", hl.dsp.exec_cmd(menu))
+hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen())
+hl.bind(mainMod .. " + SHIFT + L", hl.dsp.exec_cmd("hyprlock"))
+hl.bind(mainMod .. " + ALT + down", hl.dsp.layout("colresize -conf"))
+hl.bind(mainMod .. " + ALT + up", hl.dsp.layout("colresize +conf"))
+
+-------------------
+--- AUDIO BINDS ---
+-------------------
+
+hl.bind(mainMod .. " + H", hl.dsp.exec_cmd("pactl set-default-sink alsa_output.usb-Corsair_CORSAIR_VOID_ELITE_Wireless_Gaming_Dongle-00.analog-stereo"))
+hl.bind(mainMod .. " + S", hl.dsp.exec_cmd("pactl set-default-sink alsa_output.usb-Generic_USB_Audio-00.HiFi__Speaker__sink"))
+
+hl.bind("PAUSE", hl.dsp.exec_cmd(ipc .. " media playPause"))
+-- Прямые бинды по кейкодам кнопок ноутбука
+-- Добавляем бинды напрямую в движок Hyprland
+hl.bind(mainMod .. " + code:123", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+"))
+hl.bind(mainMod .. " + code:122", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"))
+-----------------
+--- UTILITIES ---
+-----------------
+hl.bind(mainMod .. " + P", hl.dsp.exec_cmd("hyprpicker -a -l"))
+hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd("hyprshot -m region --clipboard-only"))
+hl.bind("PRINT", hl.dsp.exec_cmd("hyprshot -m output -m eDP-1 -o ~/Pictures/Screenshots"))
+hl.bind("SCROLL_LOCK", hl.dsp.exec_cmd("~/Scripts/obs-replay/bin/python ~/Scripts/replaybuffer.py"))
+hl.bind(mainMod .. " + W",hl.dsp.exec_cmd(ipc .. " panel toggle wallpaperPanel"))
+hl.bind(mainMod .. " + X",hl.dsp.exec_cmd(ipc .. " launcher clipboard"))
+
+------------------
+--- MOVE FOCUS ---
+------------------
+
+hl.bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left" }))
+hl.bind(mainMod .. " + right", hl.dsp.focus({ direction = "right" }))
+hl.bind(mainMod .. " + up",    hl.dsp.focus({ direction = "up" }))
+hl.bind(mainMod .. " + down",  hl.dsp.focus({ direction = "down" }))
+
+------------------
+--- WORKSPACES ---
+------------------
+
+for i = 1, 10 do
+    local key = i % 10 -- 10 maps to key 0
+    hl.bind(mainMod .. " + " .. key,             hl.dsp.focus({ workspace = i}))
+    hl.bind(mainMod .. " + SHIFT + " .. key,     hl.dsp.window.move({ workspace = i }))
+end
+
+hl.bind(mainMod .. " + mouse_down", hl.dsp.focus({ workspace = "e+1" }))
+hl.bind(mainMod .. " + mouse_up",   hl.dsp.focus({ workspace = "e-1" }))
+
+hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(),   { mouse = true })
+hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
