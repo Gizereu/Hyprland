@@ -1,0 +1,107 @@
+import QtQuick
+import Quickshell
+pragma Singleton
+
+/*
+* Handles time formatting and universal clock
+*/
+Singleton {
+    id: root
+
+    // Current date
+    property var now: clock.date
+    // Returns a Unix Timestamp (in seconds)
+    readonly property int timestamp: {
+        return Math.floor(root.now / 1000);
+    }
+    readonly property string time: {
+        Qt.formatDateTime(clock.date, "hh:mm");
+    }
+    readonly property string date: {
+        Qt.formatDateTime(clock.date, "yyyy-MM-dd");
+    }
+    readonly property string jp_time: {
+        Qt.formatDateTime(clock.date, "hh時mm分");
+    }
+    readonly property string jp_date: {
+        Qt.formatDateTime(clock.date, "yyyy年MM月dd日");
+    }
+
+    // Standard formatting for time calculation
+    function formatStandard(date, ref) {
+        if (!date)
+            date = new Date();
+
+        if (!ref)
+            ref = new Date(0);
+
+        const monthMap = new Map([[0, "Jan"], [1, "Feb"], [2, "Mar"], [3, "Apr"], [4, "May"], [5, "Jun"], [6, "Jul"], [7, "Aug"], [8, "Sep"], [9, "Oct"], [10, "Nov"], [11, "Dec"]]);
+        const dayMap = new Map([[0, "Sun"], [1, "Mon"], [2, "Tue"], [3, "Wed"], [4, "Thu"], [5, "Fri"], [6, "Sat"]]);
+        const year = date.getFullYear();
+        const month = monthMap.get(date.getMonth());
+        const day = date.getDate();
+        const weekday = dayMap.get(date.getDay());
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+        if (date.getFullYear() != ref.getFullYear())
+            return `${weekday} ${month} ${day} ${hours}:${minutes}:${seconds} ${year}`;
+
+        if (date.getMonth() != ref.getMonth() || (date > ref && date.getDate() > ref.getDate() + 6) || (date < ref && date.getDate() < ref.getDate() - 6))
+            return `${weekday} ${month} ${day} ${hours}:${minutes}:${seconds}`;
+
+        if (date.getDate() != ref.getDate())
+            return `${weekday} ${hours}:${minutes}:${seconds}`;
+
+        return `${hours}:${minutes}:${seconds}`;
+    }
+
+    // Formats a Date object into a YYYYMMDD-HHMMSS string.
+    function getFormattedTimestamp(date) {
+        if (!date)
+            date = new Date();
+
+        const year = date.getFullYear();
+        // getMonth() is zero-based, so we add 1
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+        return `${year}${month}${day}-${hours}${minutes}${seconds}`;
+    }
+
+    // Format a date into
+    function formatRelativeTime(date) {
+        if (!date)
+            return "";
+
+        const diff = Math.abs(Date.now() - date.getTime());
+        if (diff < 60000)
+            return "now";
+
+        if (diff < 120000)
+            return "1 minute ago";
+
+        if (diff < 3.6e+06)
+            return Math.floor(diff / 60000) + " minutes ago";
+
+        if (diff < 7.2e+06)
+            return "1 hour ago";
+
+        if (diff < 8.64e+07)
+            return Math.floor(diff / 3.6e+06) + " minutes ago";
+
+        if (diff < 1.728e+08)
+            return "1 day ago";
+
+        return Math.floor(diff / 8.64e+07) + " days ago";
+    }
+
+    SystemClock {
+        id: clock
+
+        precision: SystemClock.Seconds
+    }
+
+}
